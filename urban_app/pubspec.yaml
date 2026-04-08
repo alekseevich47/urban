@@ -1,0 +1,50 @@
+name: urban_app
+description: Urban - информационная платформа для поиска развлечений в любом городе.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # Карты и геолокация
+  flutter_map: ^6.0.0
+  latlong2: ^0.9.0
+  geolocator: ^10.1.0
+  
+  # UI компоненты
+  cupertino_icons: ^1.0.6
+  google_fonts: ^6.1.0
+  cached_network_image: ^3.3.0
+  shimmer: ^3.0.0
+  
+  # Навигация
+  go_router: ^12.1.0
+  
+  # State Management
+  provider: ^6.1.1
+  
+  # Firebase (опционально, можно заменить на Supabase)
+  # firebase_core: ^2.24.0
+  # firebase_auth: ^4.16.0
+  # cloud_firestore: ^4.14.0
+  
+  # Для анимаций
+  animate_do: ^3.1.2
+  lottie: ^2.7.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/lottie/
