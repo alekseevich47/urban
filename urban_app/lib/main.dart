@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../theme/urban_theme.dart';
+import 'theme/urban_theme.dart';
+import 'screens/map_screen.dart';
+import 'screens/feed_screen.dart';
 
 class MainApp extends StatelessWidget {
   const MainApp({super.key});
@@ -37,8 +39,8 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _screens = [
-    const MapScreenPlaceholder(),
-    const FeedScreenPlaceholder(),
+    const MapScreen(),
+    const FeedScreen(),
     const ChatScreenPlaceholder(),
     const ProfileScreenPlaceholder(),
   ];
@@ -119,39 +121,20 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 // Заглушки для экранов (будут заменены на реальные экраны)
-class MapScreenPlaceholder extends StatelessWidget {
-  const MapScreenPlaceholder({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.map, size: 64, color: UrbanTheme.primaryColor),
-          SizedBox(height: 16),
-          Text('Экран карты', style: UrbanTheme.headingMedium),
-          SizedBox(height: 8),
-          Text('Здесь будет интерактивная карта с развлечениями', style: UrbanTheme.bodyMedium),
-        ],
-      ),
-    );
-  }
-}
 
 class FeedScreenPlaceholder extends StatelessWidget {
   const FeedScreenPlaceholder({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.explore, size: 64, color: UrbanTheme.secondaryColor),
-          SizedBox(height: 16),
+          const Icon(Icons.explore, size: 64, color: UrbanTheme.secondaryColor),
+          const SizedBox(height: 16),
           Text('Лента развлечений', style: UrbanTheme.headingMedium),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text('Фото и отзывы от других пользователей', style: UrbanTheme.bodyMedium),
         ],
       ),
@@ -164,14 +147,14 @@ class ChatScreenPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.chat, size: 64, color: UrbanTheme.accentColor),
-          SizedBox(height: 16),
+          const Icon(Icons.chat, size: 64, color: UrbanTheme.accentColor),
+          const SizedBox(height: 16),
           Text('Сообщения', style: UrbanTheme.headingMedium),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text('Общайтесь с друзьями и организаторами', style: UrbanTheme.bodyMedium),
         ],
       ),
@@ -184,14 +167,14 @@ class ProfileScreenPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.person, size: 64, color: UrbanTheme.warningColor),
-          SizedBox(height: 16),
+          const Icon(Icons.person, size: 64, color: UrbanTheme.warningColor),
+          const SizedBox(height: 16),
           Text('Профиль', style: UrbanTheme.headingMedium),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text('Ваша статистика, достижения и настройки', style: UrbanTheme.bodyMedium),
         ],
       ),

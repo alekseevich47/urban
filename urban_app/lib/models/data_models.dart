@@ -1,154 +1,77 @@
-enum EntertainmentCategory {
-  cinema,
-  bowling,
-  darts,
-  bar,
-  rental,
-  park,
-  beach,
-  fishing,
+import 'package:latlong2/latlong.dart';
+
+enum VenueCategory {
   concert,
-  event,
-  other,
+  nightclub,
+  bar,
+  cinema,
+  sport,
+  culture,
+  other
 }
 
 class EntertainmentVenue {
   final String id;
   final String name;
-  final EntertainmentCategory category;
   final String description;
-  final String address;
-  final double latitude;
-  final double longitude;
-  final List<String> images;
+  final VenueCategory category;
+  final LatLng location;
+  final String imageUrl;
   final double rating;
-  final int reviewsCount;
-  final Map<String, dynamic> features; // Специфичные фичи для каждого типа
-  final bool isPremium;
-  final String? phone;
-  final String? socialLink;
-  final List<String> tags;
+  final double? priceFrom;
 
-  const EntertainmentVenue({
+  EntertainmentVenue({
     required this.id,
     required this.name,
+    required this.description,
     required this.category,
-    required this.description,
-    required this.address,
-    required this.latitude,
-    required this.longitude,
-    required this.images,
-    required this.rating,
-    required this.reviewsCount,
-    required this.features,
-    this.isPremium = false,
-    this.phone,
-    this.socialLink,
-    this.tags = const [],
-  });
-
-  String get categoryIcon {
-    switch (category) {
-      case EntertainmentCategory.cinema:
-        return '🎬';
-      case EntertainmentCategory.bowling:
-        return '🎳';
-      case EntertainmentCategory.darts:
-        return '🎯';
-      case EntertainmentCategory.bar:
-        return '🍸';
-      case EntertainmentCategory.rental:
-        return '🚲';
-      case EntertainmentCategory.park:
-        return '🌳';
-      case EntertainmentCategory.beach:
-        return '🏖️';
-      case EntertainmentCategory.fishing:
-        return '🎣';
-      case EntertainmentCategory.concert:
-        return '🎵';
-      case EntertainmentCategory.event:
-        return '🎉';
-      case EntertainmentCategory.other:
-        return '📍';
-    }
-  }
-}
-
-class UserReview {
-  final String id;
-  final String userId;
-  final String userName;
-  final String userAvatar;
-  final String venueId;
-  final String content;
-  final List<String> photos;
-  final DateTime createdAt;
-  final int likes;
-
-  const UserReview({
-    required this.id,
-    required this.userId,
-    required this.userName,
-    required this.userAvatar,
-    required this.venueId,
-    required this.content,
-    required this.photos,
-    required this.createdAt,
-    this.likes = 0,
-  });
-}
-
-class UserEvent {
-  final String id;
-  final String creatorId;
-  final String title;
-  final String description;
-  final DateTime dateTime;
-  final String location;
-  final double latitude;
-  final double longitude;
-  final int maxParticipants;
-  final int currentParticipants;
-  final List<String> tags;
-  final bool isPrivate;
-
-  const UserEvent({
-    required this.id,
-    required this.creatorId,
-    required this.title,
-    required this.description,
-    required this.dateTime,
     required this.location,
-    required this.latitude,
-    required this.longitude,
-    required this.maxParticipants,
-    required this.currentParticipants,
-    required this.tags,
-    this.isPrivate = false,
+    required this.imageUrl,
+    required this.rating,
+    this.priceFrom,
   });
 }
 
-class UserProfile {
-  final String id;
-  final String username;
-  final String email;
-  final String? avatar;
-  final List<String> interests;
-  final List<String> visitedVenues;
-  final List<String> friends;
-  final int level;
-  final int points;
-
-  const UserProfile({
-    required this.id,
-    required this.username,
-    required this.email,
-    this.avatar,
-    this.interests = const [],
-    this.visitedVenues = const [],
-    this.friends = const [],
-    this.level = 1,
-    this.points = 0,
-  });
-}
+// Моковые данные для прототипа
+final List<EntertainmentVenue> mockVenues = [
+  EntertainmentVenue(
+    id: '1',
+    name: 'Cyber Arena',
+    description: 'Главная киберспортивная арена города. Турниры, VR и мощное железо.',
+    category: VenueCategory.sport,
+    location: const LatLng(55.751244, 37.618423),
+    imageUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=500',
+    rating: 4.9,
+    priceFrom: 500,
+  ),
+  EntertainmentVenue(
+    id: '2',
+    name: 'Neon Night',
+    description: 'Лучшие диджеи и неоновая атмосфера каждую пятницу.',
+    category: VenueCategory.nightclub,
+    location: const LatLng(55.755826, 37.617300),
+    imageUrl: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?q=80&w=500',
+    rating: 4.7,
+    priceFrom: 1500,
+  ),
+  EntertainmentVenue(
+    id: '3',
+    name: 'The Loft Bar',
+    description: 'Крафтовое пиво и живая музыка в уютном лофте.',
+    category: VenueCategory.bar,
+    location: const LatLng(55.749000, 37.625000),
+    imageUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=500',
+    rating: 4.5,
+    priceFrom: 800,
+  ),
+  EntertainmentVenue(
+    id: '4',
+    name: 'Cinema Future',
+    description: 'Кинотеатр с эффектом полного погружения и 4D креслами.',
+    category: VenueCategory.cinema,
+    location: const LatLng(55.758000, 37.610000),
+    imageUrl: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=500',
+    rating: 4.8,
+    priceFrom: 400,
+  ),
+];
