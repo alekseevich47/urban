@@ -66,5 +66,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+
+    <!-- Yandex Maps Permissions and API Key -->
+    <key>YandexMapsAPIKey</key>
+    <string>YOUR_API_KEY_HERE</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Urban использует ваше местоположение для отображения заведений на карте.</string>
 </dict>
 </plist>

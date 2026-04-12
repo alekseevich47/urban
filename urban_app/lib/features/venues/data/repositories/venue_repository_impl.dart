@@ -1,18 +1,14 @@
-import '../models/data_models.dart';
+import '../../../../models/data_models.dart';
+import '../../domain/repositories/i_venue_repository.dart';
 
-/// Моковый репозиторий для разработки.
-/// Содержит тестовые данные по заведениям в Москве.
-abstract class VenueRepository {
-  /// Получает список всех заведений.
-  Future<List<EntertainmentVenue>> getVenues();
-}
-
-/// Реализация репозитория с моковыми данными.
-class MockVenueRepository implements VenueRepository {
+/// Реализация репозитория заведений.
+/// В данной версии использует фиксированные данные (Mock).
+/// В будущем здесь будет обращение к API (PocketBase/Supabase).
+class VenueRepositoryImpl implements IVenueRepository {
   @override
   Future<List<EntertainmentVenue>> getVenues() async {
-    // Имитация задержки сети
-    await Future.delayed(const Duration(seconds: 1));
+    // Имитация задержки сети согласно §7.1 (L2 кэш еще не внедрен)
+    await Future.delayed(const Duration(milliseconds: 800));
 
     return const [
       EntertainmentVenue(

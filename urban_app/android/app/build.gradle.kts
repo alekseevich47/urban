@@ -25,6 +25,10 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0.0"
+
+        // Интеграция API ключа из локального файла настроек (или через flutter_dotenv в Dart)
+        // Для Android манифеста мы можем передать его через manifestPlaceholders
+        manifestPlaceholders["yandexMapsApiKey"] = "98acadd3-6dfd-421f-8da8-7d63968921f4"
     }
 
     externalNativeBuild {
@@ -38,8 +42,16 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    repositories {
+        maven { url = uri("https://maven.yandex.ru") }
+    }
 }
 
 flutter {
     source = "../.."
 }
+
+dependencies {
+        implementation("com.yandex.android:maps.mobile:4.33.1-full")
+    }

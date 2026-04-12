@@ -1,24 +1,36 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'theme/urban_theme.dart';
 import 'screens/map_screen.dart';
 import 'screens/feed_screen.dart';
-import 'providers/venue_provider.dart';
-import 'repositories/mock_venue_repository.dart';
+import 'features/venues/data/repositories/venue_repository_impl.dart';
+import 'features/venues/domain/use_cases/get_venues_use_case.dart';
+import 'features/venues/presentation/bloc/venue_bloc.dart';
+import 'features/venues/presentation/bloc/venue_event.dart';
 
 /// Точка входа в приложение Urban.
 /// Инициализирует провайдеры и запускает корневой виджет.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Загружаем переменные окружения (.env)
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    // В продакшене здесь должно быть логирование через logger
+    debugPrint('Ошибка загрузки .env: $e');
+  }
 
-  // Пока работаем на моках для тестирования UI
+  // Инициализация зависимостей для Venues (в будущем через get_it)
+  final venueRepository = VenueRepositoryImpl();
+  final getVenuesUseCase = GetVenuesUseCase(venueRepository);
+
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(
-          create: (_) => VenueProvider(MockVenueRepository())..fetchVenues(),
-        ),
-      ],
+    // Внедряем VenueBloc (Clean Architecture) через BlocProvider
+    BlocProvider(
+      create: (_) => VenueBloc(getVenuesUseCase: getVenuesUseCase)
+        ..add(const FetchVenuesEvent()),
       child: const MainApp(),
     ),
   );

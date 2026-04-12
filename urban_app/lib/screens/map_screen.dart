@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geolocator/geolocator.dart';
 import '../theme/urban_theme.dart';
 import '../models/data_models.dart';
-import '../providers/venue_provider.dart';
+import '../features/venues/presentation/bloc/venue_bloc.dart';
+import '../features/venues/presentation/bloc/venue_event.dart';
+import '../features/venues/presentation/bloc/venue_state.dart';
 
 /// Экран с картой заведений Urban.
 /// Использует Яндекс.Карты для отображения локаций и взаимодействия с пользователем.
@@ -27,10 +30,11 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Consumer<VenueProvider>(
-        builder: (context, provider, child) {
-          // Обновляем маркеры при изменении данных в провайдере
-          _updateMapObjects(provider.venues);
+      body: BlocBuilder<VenueBloc, VenueState>(
+        builder: (context, state) {
+          if (state is VenueLoaded) {
+            _updateMapObjects(state.filteredVenues);
+          }
 
           return Stack(
             children: [
@@ -38,16 +42,10 @@ class _MapScreenState extends State<MapScreen> {
               YandexMap(
                 onMapCreated: (controller) async {
                   _mapController = controller;
-                  // Установка начальной позиции (Москва)
-                  await _mapController.moveCamera(
-                    animation: const MapAnimation(type: MapAnimationType.smooth, duration: 2.0),
-                    CameraUpdate.newCameraPosition(
-                      const CameraPosition(
-                        target: Point(latitude: 55.751244, longitude: 37.618423),
-                        zoom: 13,
-                      ),
-                    ),
-                  );
+                  // Включаем слой местоположения пользователя
+                  await _mapController.toggleUserLayer(visible: true);
+                  // Перемещаемся к пользователю при запуске
+                  await _goToUserLocation();
                 },
                 mapObjects: _mapObjects,
                 onMapTap: (point) {
@@ -63,16 +61,16 @@ class _MapScreenState extends State<MapScreen> {
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     children: [
-                      _buildSearchField(provider),
+                      _buildSearchField(context, state),
                       const SizedBox(height: 12),
-                      _buildQuickFilters(provider),
+                      _buildQuickFilters(context, state),
                     ],
                   ),
                 ),
               ),
 
               // Индикатор загрузки
-              if (provider.isLoading)
+              if (state is VenueLoading)
                 const Positioned(
                   top: 100,
                   left: 0,
@@ -95,21 +93,56 @@ class _MapScreenState extends State<MapScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await _mapController.moveCamera(
-            animation: const MapAnimation(type: MapAnimationType.smooth, duration: 1.0),
-            CameraUpdate.newCameraPosition(
-              const CameraPosition(
-                target: Point(latitude: 55.751244, longitude: 37.618423),
-                zoom: 13,
-              ),
-            ),
-          );
-        },
+        onPressed: _goToUserLocation,
         backgroundColor: UrbanTheme.surfaceColor,
         child: const Icon(Icons.my_location, color: UrbanTheme.primaryColor),
       ),
     );
+  }
+
+  /// Перемещает камеру к текущему местоположению пользователя.
+  Future<void> _goToUserLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Проверяем статус службы геолокации
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      return;
+    }
+
+    // Проверяем разрешения
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      // Пользователь навсегда запретил доступ
+      return;
+    }
+
+    // Получаем текущие координаты
+    try {
+      final position = await Geolocator.getCurrentPosition();
+      await _mapController.moveCamera(
+        animation: const MapAnimation(type: MapAnimationType.smooth, duration: 1.5),
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: Point(
+              latitude: position.latitude,
+              longitude: position.longitude,
+            ),
+            zoom: 15,
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint('Ошибка получения геолокации: $e');
+    }
   }
 
   /// Обновляет список маркеров на карте на основе списка заведений.
@@ -141,7 +174,10 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   /// Строит поле текстового поиска.
-  Widget _buildSearchField(VenueProvider provider) {
+  Widget _buildSearchField(BuildContext context, VenueState state) {
+    final isLoading = state is VenueLoading;
+    final isEmpty = state is VenueLoaded && state.filteredVenues.isEmpty;
+
     return Container(
       decoration: BoxDecoration(
         boxShadow: [
@@ -153,11 +189,11 @@ class _MapScreenState extends State<MapScreen> {
         ],
       ),
       child: TextField(
-        onChanged: (value) => provider.setSearchQuery(value),
+        onChanged: (value) => context.read<VenueBloc>().add(SearchQueryChangedEvent(value)),
         style: UrbanTheme.bodyMedium.copyWith(color: Colors.white),
         decoration: UrbanTheme.searchInputDecoration.copyWith(
           hintText: 'Поиск (клуб, затусить, 18+)...',
-          suffixIcon: provider.venues.isEmpty && !provider.isLoading
+          suffixIcon: isEmpty && !isLoading
               ? const Icon(Icons.search_off, color: UrbanTheme.accentColor)
               : const Icon(Icons.search, color: UrbanTheme.primaryColor),
         ),
@@ -166,12 +202,17 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   /// Строит горизонтальный список быстрых фильтров по категориям.
-  Widget _buildQuickFilters(VenueProvider provider) {
+  Widget _buildQuickFilters(BuildContext context, VenueState state) {
+    VenueCategory? selectedCategory;
+    if (state is VenueLoaded) {
+      selectedCategory = state.selectedCategory;
+    }
+
     return Row(
       children: [
         // Кнопка вызова всех категорий
         GestureDetector(
-          onTap: () => _showAllCategories(context, provider),
+          onTap: () => _showAllCategories(context, selectedCategory),
           child: Container(
             height: 45,
             width: 45,
@@ -194,7 +235,7 @@ class _MapScreenState extends State<MapScreen> {
               itemBuilder: (context, index) {
                 final isAll = index == 0;
                 final category = isAll ? null : VenueCategory.values[index - 1];
-                final isSelected = provider.selectedCategory == category;
+                final isSelected = selectedCategory == category;
 
                 final label = isAll ? 'Все' : category!.label;
                 final icon = isAll ? Icons.all_inclusive : category!.icon;
@@ -202,7 +243,7 @@ class _MapScreenState extends State<MapScreen> {
                 return Padding(
                   padding: const EdgeInsets.only(right: 8.0),
                   child: GestureDetector(
-                    onTap: () => provider.setCategory(category),
+                    onTap: () => context.read<VenueBloc>().add(CategorySelectedEvent(category)),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -243,7 +284,8 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   /// Отображает модальное окно со всеми категориями заведений.
-  void _showAllCategories(BuildContext context, VenueProvider provider) {
+  void _showAllCategories(BuildContext context, VenueCategory? selectedCategory) {
+    final venueBloc = context.read<VenueBloc>();
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -281,10 +323,10 @@ class _MapScreenState extends State<MapScreen> {
                 itemCount: VenueCategory.values.length,
                 itemBuilder: (context, index) {
                   final category = VenueCategory.values[index];
-                  final isSelected = provider.selectedCategory == category;
+                  final isSelected = selectedCategory == category;
                   return GestureDetector(
                     onTap: () {
-                      provider.setCategory(category);
+                      venueBloc.add(CategorySelectedEvent(category));
                       Navigator.pop(context);
                     },
                     child: Container(
