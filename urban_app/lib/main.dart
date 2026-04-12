@@ -1,8 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'theme/urban_theme.dart';
 import 'screens/map_screen.dart';
 import 'screens/feed_screen.dart';
+import 'providers/venue_provider.dart';
+import 'repositories/mock_venue_repository.dart';
 
+/// Точка входа в приложение Urban.
+/// Инициализирует провайдеры и запускает корневой виджет.
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Пока работаем на моках для тестирования UI
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => VenueProvider(MockVenueRepository())..fetchVenues(),
+        ),
+      ],
+      child: const MainApp(),
+    ),
+  );
+}
+
+/// Основной класс приложения.
+/// Настраивает глобальную тему и стартовый экран.
 class MainApp extends StatelessWidget {
   const MainApp({super.key});
 
@@ -28,6 +51,8 @@ class MainApp extends StatelessWidget {
   }
 }
 
+/// Главный экран с нижней навигацией.
+/// Управляет переключением между картой, лентой, чатами и профилем.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -38,11 +63,12 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [
-    const MapScreen(),
-    const FeedScreen(),
-    const ChatScreenPlaceholder(),
-    const ProfileScreenPlaceholder(),
+  /// Список экранов для навигации.
+  final List<Widget> _screens = const [
+    MapScreen(),
+    FeedScreen(),
+    ChatScreenPlaceholder(),
+    ProfileScreenPlaceholder(),
   ];
 
   @override
@@ -81,6 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Строит элемент нижней навигации с анимацией.
   Widget _buildNavItem(int index, IconData inactiveIcon, IconData activeIcon, String label) {
     final isActive = _currentIndex == index;
     
@@ -120,68 +147,32 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// Заглушки для экранов (будут заменены на реальные экраны)
-
-class FeedScreenPlaceholder extends StatelessWidget {
-  const FeedScreenPlaceholder({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.explore, size: 64, color: UrbanTheme.secondaryColor),
-          const SizedBox(height: 16),
-          Text('Лента развлечений', style: UrbanTheme.headingMedium),
-          const SizedBox(height: 8),
-          Text('Фото и отзывы от других пользователей', style: UrbanTheme.bodyMedium),
-        ],
-      ),
-    );
-  }
-}
-
+/// Заглушка для экрана чатов.
 class ChatScreenPlaceholder extends StatelessWidget {
   const ChatScreenPlaceholder({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.chat, size: 64, color: UrbanTheme.accentColor),
-          const SizedBox(height: 16),
-          Text('Сообщения', style: UrbanTheme.headingMedium),
-          const SizedBox(height: 8),
-          Text('Общайтесь с друзьями и организаторами', style: UrbanTheme.bodyMedium),
-        ],
+    return const Center(
+      child: Text(
+        'Чат (в разработке)',
+        style: TextStyle(color: Colors.white),
       ),
     );
   }
 }
 
+/// Заглушка для экрана профиля.
 class ProfileScreenPlaceholder extends StatelessWidget {
   const ProfileScreenPlaceholder({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.person, size: 64, color: UrbanTheme.warningColor),
-          const SizedBox(height: 16),
-          Text('Профиль', style: UrbanTheme.headingMedium),
-          const SizedBox(height: 8),
-          Text('Ваша статистика, достижения и настройки', style: UrbanTheme.bodyMedium),
-        ],
+    return const Center(
+      child: Text(
+        'Профиль (в разработке)',
+        style: TextStyle(color: Colors.white),
       ),
     );
   }
-}
-
-void main() {
-  runApp(const MainApp());
 }

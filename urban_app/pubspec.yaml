@@ -4,42 +4,65 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=3.5.0 <4.0.0'
+  flutter: '>=3.24.0'
 
 dependencies:
   flutter:
     sdk: flutter
   
-  # Карты и геолокация
-  flutter_map: ^6.0.0
-  latlong2: ^0.9.0
-  geolocator: ^10.1.0
+  # 🗺️ КАРТЫ (ЯНДЕКС) - Основной стек согласно AI_CODING_GUIDELINES §2.4
+  yandex_mapkit: ^4.2.1
+  geolocator: ^14.0.2
+  geocoding: ^4.0.0
   
-  # UI компоненты
-  cupertino_icons: ^1.0.6
-  google_fonts: ^6.1.0
-  cached_network_image: ^3.3.0
-  shimmer: ^3.0.0
+  # 🏗️ State Management & Logic (Clean Architecture)
+  flutter_bloc: ^9.1.1
+  equatable: ^2.0.8
+  provider: ^6.1.5+1
   
-  # Навигация
-  go_router: ^12.1.0
+  # 📦 Dependency Injection
+  get_it: ^9.2.1
+  injectable: ^2.7.1+4
   
-  # State Management
-  provider: ^6.1.1
+  # 🌐 Network & Backend
+  dio: ^5.9.2
+  dio_smart_retry: ^7.0.1
+  connectivity_plus: ^7.1.1
+  pocketbase: 0.23.2
+  url_launcher: ^6.3.2
   
-  # Firebase (опционально, можно заменить на Supabase)
-  # firebase_core: ^2.24.0
-  # firebase_auth: ^4.16.0
-  # cloud_firestore: ^4.14.0
+  # 💾 Local Storage (Offline Mode - FUTURE_IMPLEMENTATIONS §6.2)
+  hive: 2.2.3
+  hive_flutter: 1.1.0
+  flutter_secure_storage: ^10.0.0
+  shared_preferences: ^2.5.5
   
-  # Для анимаций
-  animate_do: ^3.1.2
-  lottie: ^2.7.0
+  # 🧭 Navigation
+  go_router: ^17.2.0
+  
+  # 🎨 UI & UX Components
+  cupertino_icons: ^1.0.9
+  google_fonts: ^8.0.2
+  cached_network_image: ^3.4.1
+  shimmer: 3.0.0
+  lottie: ^3.3.3
+  animate_do: ^4.2.0
+  
+  # 🛠 Utils
+  intl: ^0.20.2
+  local_auth: ^3.0.1
+  flutter_dotenv: ^6.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.1
+  flutter_lints: ^6.0.0
+  build_runner: ^2.13.1
+  injectable_generator: ^2.12.1
+  freezed: ^3.2.5
+  freezed_annotation: ^3.1.0
+  json_serializable: ^6.13.1
 
 flutter:
   uses-material-design: true

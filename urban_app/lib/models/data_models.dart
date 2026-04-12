@@ -1,77 +1,102 @@
-import 'package:latlong2/latlong.dart';
+import 'package:flutter/material.dart';
 
+/// Категории заведений в Urban.
+/// Используются для фильтрации и отображения иконок на карте.
 enum VenueCategory {
-  concert,
-  nightclub,
-  bar,
-  cinema,
-  sport,
-  culture,
-  other
+  /// Музеи, театры, выставки
+  culture('Культура', Icons.museum_outlined),
+  /// Спортзалы, площадки
+  sport('Спорт', Icons.fitness_center_outlined),
+  /// Компьютерные клубы, квесты
+  gaming('Игры', Icons.sports_esports_outlined),
+  /// Рестораны, бары, кофейни
+  food('Еда', Icons.restaurant_outlined),
+  /// Клубы, бары (ночной режим)
+  nightlife('Ночь', Icons.nightlife_outlined),
+  /// Фестивали, концерты
+  events('События', Icons.event_outlined),
+  /// Парки, загородный отдых
+  nature('Природа', Icons.terrain_outlined),
+  /// Творческие студии, мастер-классы
+  hobbies('Хобби', Icons.palette_outlined),
+  /// Детские площадки, семейные центры
+  family('Семья', Icons.family_restroom_outlined),
+  /// Прыжки с парашютом, картинг
+  extreme('Экстрим', Icons.rocket_launch_outlined),
+  /// Активный отдых в городе
+  active('Актив', Icons.bolt_outlined),
+  /// Курсы, лекции
+  education('Знания', Icons.school_outlined);
+
+  final String label;
+  final IconData icon;
+  const VenueCategory(this.label, this.icon);
 }
 
+/// Теги заведения для умного поиска.
+/// Помогают в фильтрации по бюджету, времени и аудитории.
+class VenueTags {
+  /// Бюджет: "бесплатно", "бюджетно", "средне", "дорого"
+  final String price;
+  /// Список временных меток: ["утро", "день", "вечер", "ночь"]
+  final List<String> time;
+  /// В помещении или на улице
+  final bool isIndoor;
+  /// Возрастное ограничение: "0+", "18+" и т.д.
+  final String age;
+  /// Для кого: "любая", "пары", "семья", "одиночки"
+  final String company;
+  /// Активный или пассивный отдых
+  final bool isActive;
+
+  const VenueTags({
+    required this.price,
+    required this.time,
+    this.isIndoor = true,
+    this.age = '0+',
+    this.company = 'любая',
+    this.isActive = false,
+  });
+}
+
+/// Модель координат.
+/// Используется для развязки бизнес-логики и картографических плагинов.
+class UrbanLocation {
+  final double latitude;
+  final double longitude;
+
+  const UrbanLocation(this.latitude, this.longitude);
+}
+
+/// Основная модель заведения (Entertainment Venue).
+/// Содержит полную информацию для отображения на карте и в ленте.
 class EntertainmentVenue {
   final String id;
   final String name;
   final String description;
   final VenueCategory category;
-  final LatLng location;
+  final String subCategory;
+  /// Координаты для отображения на карте
+  final UrbanLocation location;
   final String imageUrl;
   final double rating;
   final double? priceFrom;
+  /// Теги для текстового поиска
+  final List<String> keywords;
+  /// Структурированные теги для фильтров
+  final VenueTags tags;
 
-  EntertainmentVenue({
+  const EntertainmentVenue({
     required this.id,
     required this.name,
     required this.description,
     required this.category,
+    required this.subCategory,
     required this.location,
     required this.imageUrl,
     required this.rating,
     this.priceFrom,
+    this.keywords = const [],
+    required this.tags,
   });
 }
-
-// Моковые данные для прототипа
-final List<EntertainmentVenue> mockVenues = [
-  EntertainmentVenue(
-    id: '1',
-    name: 'Cyber Arena',
-    description: 'Главная киберспортивная арена города. Турниры, VR и мощное железо.',
-    category: VenueCategory.sport,
-    location: const LatLng(55.751244, 37.618423),
-    imageUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=500',
-    rating: 4.9,
-    priceFrom: 500,
-  ),
-  EntertainmentVenue(
-    id: '2',
-    name: 'Neon Night',
-    description: 'Лучшие диджеи и неоновая атмосфера каждую пятницу.',
-    category: VenueCategory.nightclub,
-    location: const LatLng(55.755826, 37.617300),
-    imageUrl: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?q=80&w=500',
-    rating: 4.7,
-    priceFrom: 1500,
-  ),
-  EntertainmentVenue(
-    id: '3',
-    name: 'The Loft Bar',
-    description: 'Крафтовое пиво и живая музыка в уютном лофте.',
-    category: VenueCategory.bar,
-    location: const LatLng(55.749000, 37.625000),
-    imageUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=500',
-    rating: 4.5,
-    priceFrom: 800,
-  ),
-  EntertainmentVenue(
-    id: '4',
-    name: 'Cinema Future',
-    description: 'Кинотеатр с эффектом полного погружения и 4D креслами.',
-    category: VenueCategory.cinema,
-    location: const LatLng(55.758000, 37.610000),
-    imageUrl: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=500',
-    rating: 4.8,
-    priceFrom: 400,
-  ),
-];
