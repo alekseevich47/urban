@@ -1,30 +1,28 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:urban_app/main.dart';
+import 'package:urban_app/core/di/injection.dart';
+import 'package:urban_app/features/venues/venues.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:urban_app/features/venues/src/domain/use_cases/get_venues_use_case.dart';
+
+class MockGetVenuesUseCase extends Mock implements GetVenuesUseCase {}
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  setUpAll(() {
+    final mockUseCase = MockGetVenuesUseCase();
+    when(() => mockUseCase.call()).thenAnswer((_) async => []);
+    getIt.registerSingleton<GetVenuesUseCase>(mockUseCase);
+  });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  testWidgets('Smoke test: Render MainApp', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      BlocProvider(
+        create: (_) => VenueBloc(getVenuesUseCase: getIt<GetVenuesUseCase>()),
+        child: const MainApp(),
+      ),
+    );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.byType(MainApp), findsOneWidget);
   });
 }

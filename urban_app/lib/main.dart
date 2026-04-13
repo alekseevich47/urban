@@ -1,70 +1,91 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'theme/urban_theme.dart';
-import 'screens/map_screen.dart';
-import 'screens/feed_screen.dart';
-import 'features/venues/data/repositories/venue_repository_impl.dart';
-import 'features/venues/domain/use_cases/get_venues_use_case.dart';
-import 'features/venues/presentation/bloc/venue_bloc.dart';
-import 'features/venues/presentation/bloc/venue_event.dart';
+import 'package:urban_app/core/di/injection.dart';
+import 'package:urban_app/core/ui/urban_theme.dart';
+import 'package:urban_app/core/utils/logger.dart';
+import 'package:urban_app/features/venues/venues.dart';
+import 'package:urban_app/features/auth/auth.dart';
+import 'package:urban_app/features/venues/src/domain/use_cases/get_venues_use_case.dart';
+import 'package:urban_app/core/network/pocketbase_service.dart';
 
 /// Точка входа в приложение Urban.
-/// Инициализирует провайдеры и запускает корневой виджет.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Загружаем переменные окружения (.env)
+  UrbanLogger.i('Приложение запускается...');
+
   try {
-    await dotenv.load(fileName: ".env");
-  } catch (e) {
-    // В продакшене здесь должно быть логирование через logger
-    debugPrint('Ошибка загрузки .env: $e');
+    // 1. Инициализация Dependency Injection (§5)
+    UrbanLogger.i('Инициализация DI...');
+    configureDependencies();
+    UrbanLogger.i('DI инициализирован успешно');
+
+    // 2. Инициализация сетевого слоя
+    PocketBaseService.init();
+    UrbanLogger.i('PocketBaseService инициализирован');
+
+    // 3. Загрузка переменных окружения
+    try {
+      await dotenv.load(fileName: ".env");
+      final pbUrl = dotenv.env['POCKETBASE_URL'];
+      if (pbUrl != null && pbUrl.isNotEmpty) {
+        PocketBaseService.init(customUrl: pbUrl);
+      }
+      UrbanLogger.i('.env загружен');
+    } catch (e) {
+      UrbanLogger.w('Файл .env не найден или поврежден. Используются настройки по умолчанию.');
+    }
+
+    // Проверка критической зависимости
+    if (!getIt.isRegistered<GetVenuesUseCase>()) {
+      throw Exception('GetVenuesUseCase не зарегистрирован в DI!');
+    }
+
+  } catch (e, stack) {
+    UrbanLogger.e('Критическая ошибка при инициализации', error: e, stackTrace: stack);
+    // В случае ошибки показываем минимальный UI ошибки
+    runApp(MaterialApp(home: Scaffold(body: Center(child: Text('Ошибка запуска: $e')))));
+    return;
   }
 
-  // Инициализация зависимостей для Venues (в будущем через get_it)
-  final venueRepository = VenueRepositoryImpl();
-  final getVenuesUseCase = GetVenuesUseCase(venueRepository);
-
-  runApp(
-    // Внедряем VenueBloc (Clean Architecture) через BlocProvider
-    BlocProvider(
-      create: (_) => VenueBloc(getVenuesUseCase: getVenuesUseCase)
-        ..add(const FetchVenuesEvent()),
-      child: const MainApp(),
-    ),
-  );
+  runApp(const MainApp());
 }
 
 /// Основной класс приложения.
-/// Настраивает глобальную тему и стартовый экран.
 class MainApp extends StatelessWidget {
   const MainApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Urban',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: UrbanTheme.backgroundColor,
-        primaryColor: UrbanTheme.primaryColor,
-        colorScheme: const ColorScheme.dark(
-          primary: UrbanTheme.primaryColor,
-          secondary: UrbanTheme.secondaryColor,
-          surface: UrbanTheme.surfaceColor,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => VenueBloc(getVenuesUseCase: getIt<GetVenuesUseCase>())
+            ..add(const FetchVenuesEvent()),
         ),
-        fontFamily: 'Inter',
-        useMaterial3: true,
+      ],
+      child: MaterialApp(
+        title: 'Urban',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          brightness: Brightness.dark,
+          scaffoldBackgroundColor: UrbanTheme.backgroundColor,
+          primaryColor: UrbanTheme.primaryColor,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: UrbanTheme.primaryColor,
+            brightness: Brightness.dark,
+            surface: UrbanTheme.surfaceColor,
+          ),
+          fontFamily: 'Inter',
+          useMaterial3: true,
+        ),
+        home: const HomeScreen(),
       ),
-      home: const HomeScreen(),
     );
   }
 }
 
 /// Главный экран с нижней навигацией.
-/// Управляет переключением между картой, лентой, чатами и профилем.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -75,12 +96,12 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  /// Список экранов для навигации.
+  /// Список экранов. FeedScreen теперь первый для стабильности при запуске.
   final List<Widget> _screens = const [
-    MapScreen(),
     FeedScreen(),
+    MapScreen(),
     ChatScreenPlaceholder(),
-    ProfileScreenPlaceholder(),
+    ProfileScreen(),
   ];
 
   @override
@@ -107,8 +128,8 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildNavItem(0, Icons.map_outlined, Icons.map, 'Карта'),
-                _buildNavItem(1, Icons.explore_outlined, Icons.explore, 'Лента'),
+                _buildNavItem(0, Icons.explore_outlined, Icons.explore, 'Лента'),
+                _buildNavItem(1, Icons.map_outlined, Icons.map, 'Карта'),
                 _buildNavItem(2, Icons.chat_outlined, Icons.chat, 'Чат'),
                 _buildNavItem(3, Icons.person_outline, Icons.person, 'Профиль'),
               ],
@@ -119,16 +140,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Строит элемент нижней навигации с анимацией.
   Widget _buildNavItem(int index, IconData inactiveIcon, IconData activeIcon, String label) {
     final isActive = _currentIndex == index;
     
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _currentIndex = index;
-        });
-      },
+      onTap: () => setState(() => _currentIndex = index),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -159,7 +175,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-/// Заглушка для экрана чатов.
 class ChatScreenPlaceholder extends StatelessWidget {
   const ChatScreenPlaceholder({super.key});
 
@@ -168,21 +183,6 @@ class ChatScreenPlaceholder extends StatelessWidget {
     return const Center(
       child: Text(
         'Чат (в разработке)',
-        style: TextStyle(color: Colors.white),
-      ),
-    );
-  }
-}
-
-/// Заглушка для экрана профиля.
-class ProfileScreenPlaceholder extends StatelessWidget {
-  const ProfileScreenPlaceholder({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'Профиль (в разработке)',
         style: TextStyle(color: Colors.white),
       ),
     );
