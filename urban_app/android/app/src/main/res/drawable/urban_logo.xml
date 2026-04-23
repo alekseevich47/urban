@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="80dp"
+    android:viewportWidth="200"
+    android:viewportHeight="80">
+    <!-- Упрощенная отрисовка текста URBAN для заставки -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M20,20 L20,50 C20,55 25,60 30,60 C35,60 40,55 40,50 L40,20 M50,20 L50,60 M50,20 L70,20 C75,20 80,25 80,30 C80,35 75,40 70,40 L50,40 M70,40 L85,60 M100,60 L100,20 C100,20 120,20 120,30 C120,40 100,40 100,40 L120,60 M140,60 L150,20 L160,60 M145,45 L155,45 M170,60 L170,20 L195,60 L195,20" />
+</vector>
