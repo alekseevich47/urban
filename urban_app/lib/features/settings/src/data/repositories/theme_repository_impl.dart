@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:injectable/injectable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../domain/repositories/theme_repository.dart';
+import 'package:urban_app/features/settings/src/domain/repositories/theme_repository.dart';
 
 /// Реализация репозитория тем с использованием SharedPreferences.
+@LazySingleton(as: ThemeRepository)
 class ThemeRepositoryImpl implements ThemeRepository {
   static const String _themeKey = 'selected_theme_mode';
 

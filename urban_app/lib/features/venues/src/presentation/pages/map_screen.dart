@@ -61,7 +61,7 @@ class _MapScreenState extends State<MapScreen> {
 
               // Индикатор загрузки
               if (state is VenueLoading)
-                const Positioned(
+                Positioned(
                   top: 100,
                   left: 0,
                   right: 0,
@@ -76,7 +76,7 @@ class _MapScreenState extends State<MapScreen> {
                   bottom: 20,
                   left: 16,
                   right: 16,
-                  child: _buildVenueCard(_selectedVenue!),
+                  child: _buildVenueCard(context, _selectedVenue!),
                 ),
             ],
           );
@@ -105,7 +105,7 @@ class _MapScreenState extends State<MapScreen> {
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withValues(alpha: 0.5),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -113,7 +113,7 @@ class _MapScreenState extends State<MapScreen> {
       ),
       child: TextField(
         onChanged: (value) => context.read<VenueBloc>().add(SearchQueryChangedEvent(value)),
-        style: UrbanTheme.bodyMedium.copyWith(color: Colors.white),
+        style: UrbanTheme.bodyMedium(context).copyWith(color: Colors.white),
         decoration: UrbanTheme.searchInputDecoration.copyWith(
           hintText: 'Поиск (клуб, затусить, 18+)...',
           suffixIcon: isEmpty && !isLoading
@@ -140,9 +140,9 @@ class _MapScreenState extends State<MapScreen> {
             height: 45,
             width: 45,
             decoration: BoxDecoration(
-              color: UrbanTheme.surfaceColor.withOpacity(0.9),
+              color: UrbanTheme.getSurfaceColor(context).withValues(alpha: 0.9),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: UrbanTheme.primaryColor.withOpacity(0.5)),
+              border: Border.all(color: UrbanTheme.primaryColor.withValues(alpha: 0.5)),
             ),
             child: const Icon(Icons.grid_view_rounded, color: UrbanTheme.primaryColor, size: 20),
           ),
@@ -171,10 +171,10 @@ class _MapScreenState extends State<MapScreen> {
                       duration: const Duration(milliseconds: 200),
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
-                        color: isSelected ? UrbanTheme.primaryColor : UrbanTheme.surfaceColor.withOpacity(0.8),
+                        color: isSelected ? UrbanTheme.primaryColor : UrbanTheme.getSurfaceColor(context).withValues(alpha: 0.8),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: isSelected ? UrbanTheme.secondaryColor : UrbanTheme.textMuted.withOpacity(0.3),
+                          color: isSelected ? UrbanTheme.secondaryColor : UrbanTheme.textMuted.withValues(alpha: 0.3),
                           width: 1.5,
                         ),
                       ),
@@ -183,13 +183,13 @@ class _MapScreenState extends State<MapScreen> {
                           Icon(
                             icon,
                             size: 18,
-                            color: isSelected ? Colors.white : UrbanTheme.textMuted,
+                            color: isSelected ? Colors.white : UrbanTheme.getTextSecondary(context),
                           ),
                           const SizedBox(width: 8),
                           Text(
                             label,
-                            style: UrbanTheme.bodyMedium.copyWith(
-                              color: isSelected ? Colors.white : UrbanTheme.textMuted,
+                            style: UrbanTheme.bodyMedium(context).copyWith(
+                              color: isSelected ? Colors.white : UrbanTheme.getTextSecondary(context),
                               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                             ),
                           ),
@@ -215,10 +215,10 @@ class _MapScreenState extends State<MapScreen> {
       isScrollControlled: true,
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.7,
-        decoration: const BoxDecoration(
-          color: UrbanTheme.backgroundColor,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          border: Border(top: BorderSide(color: UrbanTheme.primaryColor, width: 2)),
+        decoration: BoxDecoration(
+          color: UrbanTheme.getBackgroundColor(context),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: const Border(top: BorderSide(color: UrbanTheme.primaryColor, width: 2)),
         ),
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -227,7 +227,7 @@ class _MapScreenState extends State<MapScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Категории Urban', style: UrbanTheme.headingMedium),
+                Text('Категории Urban', style: UrbanTheme.headingMedium(context)),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.close, color: UrbanTheme.textMuted),
@@ -254,7 +254,7 @@ class _MapScreenState extends State<MapScreen> {
                     },
                     child: Container(
                       decoration: BoxDecoration(
-                        color: isSelected ? UrbanTheme.primaryColor.withOpacity(0.2) : UrbanTheme.surfaceColor,
+                        color: isSelected ? UrbanTheme.primaryColor.withValues(alpha: 0.2) : UrbanTheme.getSurfaceColor(context),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: isSelected ? UrbanTheme.primaryColor : Colors.transparent,
@@ -263,13 +263,13 @@ class _MapScreenState extends State<MapScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(category.icon, color: isSelected ? UrbanTheme.primaryColor : Colors.white, size: 32),
+                          Icon(category.icon, color: isSelected ? UrbanTheme.primaryColor : UrbanTheme.getTextPrimary(context), size: 32),
                           const SizedBox(height: 8),
                           Text(
                             category.label,
                             textAlign: TextAlign.center,
-                            style: UrbanTheme.bodySmall.copyWith(
-                              color: isSelected ? UrbanTheme.primaryColor : Colors.white,
+                            style: UrbanTheme.bodySmall(context).copyWith(
+                              color: isSelected ? UrbanTheme.primaryColor : UrbanTheme.getTextPrimary(context),
                               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                             ),
                           ),
@@ -287,12 +287,11 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   /// Строит информационную карточку заведения.
-  Widget _buildVenueCard(EntertainmentVenue venue) {
+  Widget _buildVenueCard(BuildContext context, EntertainmentVenue venue) {
     return Container(
       height: 120,
-      decoration: UrbanTheme.cardDecoration.copyWith(
-        color: UrbanTheme.surfaceColor,
-        border: Border.all(color: UrbanTheme.primaryColor.withOpacity(0.3)),
+      decoration: UrbanTheme.cardDecoration(context).copyWith(
+        border: Border.all(color: UrbanTheme.primaryColor.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -320,14 +319,14 @@ class _MapScreenState extends State<MapScreen> {
                       Expanded(
                         child: Text(
                           venue.name,
-                          style: UrbanTheme.headingSmall,
+                          style: UrbanTheme.headingSmall(context),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: UrbanTheme.successColor.withOpacity(0.1),
+                          color: UrbanTheme.successColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Row(
@@ -336,7 +335,7 @@ class _MapScreenState extends State<MapScreen> {
                             const SizedBox(width: 4),
                             Text(
                               venue.rating.toString(),
-                              style: UrbanTheme.bodySmall.copyWith(color: UrbanTheme.successColor, fontWeight: FontWeight.bold),
+                              style: UrbanTheme.bodySmall(context).copyWith(color: UrbanTheme.successColor, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
@@ -346,7 +345,7 @@ class _MapScreenState extends State<MapScreen> {
                   const SizedBox(height: 4),
                   Text(
                     venue.description,
-                    style: UrbanTheme.bodySmall,
+                    style: UrbanTheme.bodySmall(context),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -356,7 +355,7 @@ class _MapScreenState extends State<MapScreen> {
                     children: [
                       Text(
                         'от ${venue.priceFrom?.toInt() ?? 0} ₽',
-                        style: UrbanTheme.bodyMedium.copyWith(color: UrbanTheme.secondaryColor, fontWeight: FontWeight.bold),
+                        style: UrbanTheme.bodyMedium(context).copyWith(color: UrbanTheme.secondaryColor, fontWeight: FontWeight.bold),
                       ),
                       TextButton(
                         onPressed: () {},
@@ -367,7 +366,7 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                         child: Text(
                           'Подробнее →',
-                          style: UrbanTheme.bodySmall.copyWith(color: UrbanTheme.primaryColor),
+                          style: UrbanTheme.bodySmall(context).copyWith(color: UrbanTheme.primaryColor),
                         ),
                       ),
                     ],

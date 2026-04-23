@@ -6,12 +6,7 @@
     <application
         android:label="urban_app"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
-
-        <!-- Yandex Maps API Key -->
-        <meta-data
-            android:name="com.yandex.maps.api_key"
-            android:value="${yandexMapsApiKey}" />
+        android:icon="@mipmap/launcher_icon">
 
         <activity
             android:name=".MainActivity"

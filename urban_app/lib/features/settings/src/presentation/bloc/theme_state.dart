@@ -1,32 +1,29 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
+/// Состояние темы приложения.
 class ThemeState extends Equatable {
   final ThemeMode themeMode;
-  final Color primaryColor;
 
   const ThemeState({
     required this.themeMode,
-    required this.primaryColor,
   });
 
+  /// Начальное состояние — темная тема (согласно текущему дизайну).
   factory ThemeState.initial() {
     return const ThemeState(
-      themeMode: ThemeMode.system,
-      primaryColor: Color(0xFF6C63FF),
+      themeMode: ThemeMode.dark,
     );
   }
 
   @override
-  List<Object?> get props => [themeMode, primaryColor];
+  List<Object?> get props => [themeMode];
 
   ThemeState copyWith({
     ThemeMode? themeMode,
-    Color? primaryColor,
   }) {
     return ThemeState(
       themeMode: themeMode ?? this.themeMode,
-      primaryColor: primaryColor ?? this.primaryColor,
     );
   }
 }

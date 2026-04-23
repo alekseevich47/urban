@@ -1,3 +1,4 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:injectable/injectable.dart';
 import 'package:pocketbase/pocketbase.dart';
 import '../utils/logger.dart';
@@ -6,8 +7,8 @@ import '../utils/logger.dart';
 /// Инициализируется в main.dart и предоставляет доступ к клиенту.
 @lazySingleton
 class PocketBaseService {
-  /// URL бекенда PocketBase.
-  static String baseUrl = 'http://127.0.0.1:8090';
+  /// URL бекенда PocketBase из .env или дефолтный.
+  static String baseUrl = dotenv.get('API_BASE_URL', fallback: 'https://urban42.online/api');
 
   static late PocketBase _client;
 

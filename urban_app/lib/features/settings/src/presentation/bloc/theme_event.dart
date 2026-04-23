@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
+/// События для управления темой приложения.
 abstract class ThemeEvent extends Equatable {
   const ThemeEvent();
 
@@ -8,15 +9,17 @@ abstract class ThemeEvent extends Equatable {
   List<Object?> get props => [];
 }
 
+/// Загрузка сохраненной темы.
+class LoadThemeEvent extends ThemeEvent {}
+
+/// Событие смены темы.
 class ChangeThemeEvent extends ThemeEvent {
   final ThemeMode themeMode;
-  final Color? customPrimaryColor;
 
   const ChangeThemeEvent({
     required this.themeMode,
-    this.customPrimaryColor,
   });
 
   @override
-  List<Object?> get props => [themeMode, customPrimaryColor];
+  List<Object?> get props => [themeMode];
 }

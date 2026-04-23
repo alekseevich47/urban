@@ -32,8 +32,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bgColor = UrbanTheme.getBackgroundColor(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: UrbanTheme.backgroundColor,
+      backgroundColor: bgColor,
       body: Container(
         width: double.infinity,
         decoration: BoxDecoration(
@@ -41,9 +44,9 @@ class _LoginScreenState extends State<LoginScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              UrbanTheme.backgroundColor,
-              UrbanTheme.primaryColor.withOpacity(0.1),
-              UrbanTheme.backgroundColor,
+              bgColor,
+              UrbanTheme.primaryColor.withValues(alpha: 0.1),
+              bgColor,
             ],
           ),
         ),
@@ -64,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           border: Border.all(color: UrbanTheme.primaryColor, width: 2),
                           boxShadow: [
                             BoxShadow(
-                              color: UrbanTheme.primaryColor.withOpacity(0.5),
+                              color: UrbanTheme.primaryColor.withValues(alpha: 0.5),
                               blurRadius: 20,
                               spreadRadius: 2,
                             ),
@@ -79,10 +82,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 20),
                       Text(
                         'URBAN',
-                        style: UrbanTheme.headingLarge.copyWith(
+                        style: UrbanTheme.headingLarge(context).copyWith(
                           fontSize: 48,
                           letterSpacing: 8,
-                          color: Colors.white,
+                          color: UrbanTheme.getTextPrimary(context),
                           shadows: [
                             const Shadow(color: UrbanTheme.primaryColor, blurRadius: 10),
                             const Shadow(color: UrbanTheme.secondaryColor, blurRadius: 20),
@@ -91,7 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       Text(
                         'CITY OPERATING SYSTEM',
-                        style: UrbanTheme.bodySmall.copyWith(
+                        style: UrbanTheme.bodySmall(context).copyWith(
                           letterSpacing: 4,
                           color: UrbanTheme.primaryColor,
                         ),
@@ -104,15 +107,18 @@ class _LoginScreenState extends State<LoginScreen> {
                   delay: const Duration(milliseconds: 400),
                   child: Container(
                     padding: const EdgeInsets.all(24),
-                    decoration: UrbanTheme.cardDecoration,
+                    decoration: UrbanTheme.cardDecoration(context),
                     child: Column(
                       children: [
                         Text(
                           'ВОЙТИ В СЕТЬ',
-                          style: UrbanTheme.headingSmall.copyWith(color: Colors.white),
+                          style: UrbanTheme.headingSmall(context).copyWith(
+                            color: UrbanTheme.getTextPrimary(context),
+                          ),
                         ),
                         const SizedBox(height: 32),
                         _buildSocialButton(
+                          context,
                           label: 'ВОЙТИ ЧЕРЕЗ GOOGLE',
                           icon: Icons.g_mobiledata,
                           color: UrbanTheme.primaryColor,
@@ -120,6 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 16),
                         _buildSocialButton(
+                          context,
                           label: 'ВОЙТИ ЧЕРЕЗ VK ID',
                           icon: Icons.alternate_email,
                           color: UrbanTheme.secondaryColor,
@@ -142,7 +149,8 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildSocialButton({
+  Widget _buildSocialButton(
+    BuildContext context, {
     required String label,
     required IconData icon,
     required Color color,
@@ -154,9 +162,9 @@ class _LoginScreenState extends State<LoginScreen> {
         height: 55,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.5)),
+          border: Border.all(color: color.withValues(alpha: 0.5)),
           gradient: LinearGradient(
-            colors: [color.withOpacity(0.1), color.withOpacity(0.05)],
+            colors: [color.withValues(alpha: 0.1), color.withValues(alpha: 0.05)],
           ),
         ),
         child: Row(
@@ -166,8 +174,8 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(width: 12),
             Text(
               label,
-              style: UrbanTheme.bodyMedium.copyWith(
-                color: Colors.white,
+              style: UrbanTheme.bodyMedium(context).copyWith(
+                color: UrbanTheme.getTextPrimary(context),
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.2,
               ),

@@ -15,5 +15,4 @@ export 'src/presentation/bloc/venue_event.dart';
 export 'src/presentation/bloc/venue_state.dart';
 
 // Презентация: Экраны
-export 'src/presentation/pages/map_screen.dart';
 export 'src/presentation/pages/feed_screen.dart';

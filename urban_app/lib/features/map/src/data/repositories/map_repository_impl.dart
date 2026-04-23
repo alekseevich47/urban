@@ -1,16 +1,14 @@
-import 'package:pocketbase/pocketbase.dart';
 import '../../domain/entities/urban_marker.dart';
 import '../models/urban_marker_model.dart';
-import '../../../../core/network/pocketbase_service.dart';
+import 'package:urban_app/core/network/pocketbase_service.dart';
 
-/// Репозиторий для работы с картой и маркерами.
-/// Реализует логику получения данных с сервера с фильтрацией.
+/// Тонкий репозиторий. 
+/// Вся логика фильтрации и расчетов вынесена на сервер (VM_APP).
 class MapRepositoryImpl {
-  final PocketBase _pb = PocketBaseService.client;
-  final String _collectionName = 'activities';
+  final _client = PocketBaseService.client;
 
-  /// Получает список маркеров, попадающих в видимую область карты.
-  /// Вся фильтрация происходит на стороне сервера PocketBase.
+  /// Просто запрашиваем маркеры для области.
+  /// Сервер сам решит, какие маркеры и в каком количестве отдать.
   Future<List<UrbanMarker>> getMarkersInBounds({
     required double minLat,
     required double maxLat,
@@ -19,35 +17,26 @@ class MapRepositoryImpl {
     String? category,
   }) async {
     try {
-      // Формируем фильтр для серверной выборки (Bounding Box)
-      String filter = 'lat >= $minLat && lat <= $maxLat && lng >= $minLng && lng <= $maxLng';
-      
-      // Добавляем фильтрацию по категории, если она выбрана
-      if (category != null && category.isNotEmpty) {
-        filter += ' && category = "$category"';
-      }
+      // Мы не строим сложные SQL-like фильтры здесь.
+      // Мы просто передаем параметры в наш серверный эндпоинт.
+      final response = await _client.send('/api/urban/map/markers', method: 'GET', query: {
+        'minLat': minLat,
+        'maxLat': maxLat,
+        'minLng': minLng,
+        'maxLng': maxLng,
+        if (category != null) 'category': category,
+      });
 
-      // Делаем запрос к PocketBase
-      final records = await _pb.collection(_collectionName).getList(
-        filter: filter,
-        sort: '-created',
-      );
-
-      // Маппим JSON-ответы в модели и возвращаем как сущности
-      return records.items
-          .map((record) => UrbanMarkerModel.fromJson(record.toJson()))
-          .toList();
+      // Ответ от VM_APP уже содержит только нужные нам данные
+      final List<dynamic> items = response['items'] ?? [];
+      return items.map((item) => UrbanMarkerModel.fromJson(item)).toList();
     } catch (e) {
-      // Здесь можно добавить логирование через UrbanLogger
       rethrow;
     }
   }
 
-  /// Создает новый маркер (событие/развлечение) в БД
-  Future<UrbanMarker> createMarker(UrbanMarkerModel model) async {
-    final record = await _pb.collection(_collectionName).create(
-      body: model.toJson(),
-    );
-    return UrbanMarkerModel.fromJson(record.toJson());
+  /// Запрос на создание также уходит на сервер для валидации и обработки
+  Future<void> requestCreateMarker(UrbanMarkerModel model) async {
+    await _client.send('/api/urban/map/markers', method: 'POST', body: model.toJson());
   }
 }

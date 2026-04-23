@@ -1,11 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:maplibre_gl/maplibre_gl.dart';
 import '../../domain/entities/urban_marker.dart';
 import '../../data/repositories/map_repository_impl.dart';
 
-/// Основной экран карты (OpenStreetMap)
+/// Основной экран карты (Vector MapLibre)
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
 
@@ -14,7 +13,7 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  final MapController _mapController = MapController();
+  MapLibreMapController? _mapController;
   final MapRepositoryImpl _repository = MapRepositoryImpl();
   
   List<UrbanMarker> _markers = [];
@@ -23,39 +22,12 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
-    // Начальная загрузка маркеров
-    _loadMarkers();
   }
 
   /// Загрузка маркеров с сервера с учетом видимой области карты
   Future<void> _loadMarkers() async {
-    final bounds = _mapController.camera.visibleBounds;
-    
-    try {
-      final markers = await _repository.getMarkersInBounds(
-        minLat: bounds.south,
-        maxLat: bounds.north,
-        minLng: bounds.west,
-        maxLng: bounds.east,
-      );
-      
-      if (mounted) {
-        setState(() {
-          _markers = markers;
-        });
-      }
-    } catch (e) {
-      // Логирование ошибок через UrbanLogger (надо импортировать)
-    }
-  }
-
-  /// Метод для обработки перемещения карты с задержкой (Debounce)
-  void _onPositionChanged(MapCamera camera, bool hasGesture) {
-    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
-    
-    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
-      _loadMarkers();
-    });
+    // ВРЕМЕННО ОТКЛЮЧАЕМ логику маркеров для настройки отображения карты
+    return;
   }
 
   @override
@@ -63,34 +35,23 @@ class _MapScreenState extends State<MapScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: const LatLng(55.7558, 37.6173), // Москва по умолчанию
-              initialZoom: 13.0,
-              onPositionChanged: _onPositionChanged,
+          MapLibreMap(
+            styleString: 'https://urban42.online/map/styles/bright/style.json',
+            initialCameraPosition: const CameraPosition(
+              target: LatLng(55.0084, 82.9357), // Новосибирск
+              zoom: 12.0,
             ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.urbanapp.urban_app',
-              ),
-              MarkerLayer(
-                markers: _markers.map((marker) => Marker(
-                  point: LatLng(marker.latitude, marker.longitude),
-                  width: 40,
-                  height: 40,
-                  child: GestureDetector(
-                    onTap: () => _showMarkerDetails(marker),
-                    child: const Icon(
-                      Icons.location_on,
-                      color: Colors.red,
-                      size: 40,
-                    ),
-                  ),
-                )).toList(),
-              ),
-            ],
+            onMapCreated: (controller) {
+              _mapController = controller;
+            },
+            onStyleLoadedCallback: () {
+              _loadMarkers();
+            },
+            rotateGesturesEnabled: false,
+            tiltGesturesEnabled: false,
+            myLocationEnabled: true,
+            trackCameraPosition: true,
+            onMapLongClick: (point, latLng) => _handleMapLongPress(latLng),
           ),
           
           // Верхняя панель управления (Фильтры)
@@ -157,6 +118,37 @@ class _MapScreenState extends State<MapScreen> {
     // Здесь будет логика открытия экрана/формы создания маркера
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Здесь будет форма добавления нового места')),
+    );
+  }
+
+  /// Обработка долгого нажатия на карту для создания нового маркера
+  void _handleMapLongPress(LatLng point) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Добавить новое место?'),
+        content: Text('Координаты: ${point.latitude.toStringAsFixed(4)}, ${point.longitude.toStringAsFixed(4)}'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Отмена'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _showAddMarkerForm(point);
+            },
+            child: const Text('Да'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddMarkerForm(LatLng point) {
+    // В будущем здесь будет переход на полноценный экран формы
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Открываем форму для точки: $point')),
     );
   }
 }

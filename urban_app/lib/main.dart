@@ -1,40 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:urban_app/core/di/injection.dart';
 import 'package:urban_app/core/ui/urban_theme.dart';
 import 'package:urban_app/core/utils/logger.dart';
+import 'package:urban_app/features/auth/src/presentation/pages/splash_screen.dart';
+import 'package:urban_app/features/map/src/presentation/pages/map_screen.dart';
 import 'package:urban_app/features/venues/venues.dart';
 import 'package:urban_app/features/auth/auth.dart';
 import 'package:urban_app/features/venues/src/domain/use_cases/get_venues_use_case.dart';
 import 'package:urban_app/core/network/pocketbase_service.dart';
+import 'package:urban_app/features/settings/src/presentation/bloc/theme_bloc.dart';
+import 'package:urban_app/features/settings/src/presentation/bloc/theme_event.dart';
+import 'package:urban_app/features/settings/src/presentation/bloc/theme_state.dart';
 
 /// Точка входа в приложение Urban.
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  // Удерживаем нативный сплэш до инициализации
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
   UrbanLogger.i('Приложение запускается...');
 
   try {
-    // 1. Инициализация Dependency Injection (§5)
+    // 1. Загрузка переменных окружения (ОБЯЗАТЕЛЬНО ПЕРВЫМ ДЕЛОМ)
+    UrbanLogger.i('Загрузка .env...');
+    try {
+      await dotenv.load(fileName: ".env");
+      UrbanLogger.i('.env загружен');
+    } catch (e) {
+      UrbanLogger.w('Файл .env не найден. Используются дефолтные значения.');
+    }
+
+    // 2. Инициализация Dependency Injection
     UrbanLogger.i('Инициализация DI...');
     configureDependencies();
     UrbanLogger.i('DI инициализирован успешно');
 
-    // 2. Инициализация сетевого слоя
-    PocketBaseService.init();
-    UrbanLogger.i('PocketBaseService инициализирован');
-
-    // 3. Загрузка переменных окружения
-    try {
-      await dotenv.load(fileName: ".env");
-      final pbUrl = dotenv.env['POCKETBASE_URL'];
-      if (pbUrl != null && pbUrl.isNotEmpty) {
-        PocketBaseService.init(customUrl: pbUrl);
-      }
-      UrbanLogger.i('.env загружен');
-    } catch (e) {
-      UrbanLogger.w('Файл .env не найден или поврежден. Используются настройки по умолчанию.');
-    }
+    // 3. Инициализация сетевого слоя
+    final pbUrl = dotenv.env['POCKETBASE_URL'] ?? dotenv.env['API_BASE_URL'];
+    PocketBaseService.init(customUrl: pbUrl);
+    UrbanLogger.i('PocketBaseService инициализирован на ${PocketBaseService.baseUrl}');
 
     // Проверка критической зависимости
     if (!getIt.isRegistered<GetVenuesUseCase>()) {
@@ -43,7 +50,6 @@ void main() async {
 
   } catch (e, stack) {
     UrbanLogger.e('Критическая ошибка при инициализации', error: e, stackTrace: stack);
-    // В случае ошибки показываем минимальный UI ошибки
     runApp(MaterialApp(home: Scaffold(body: Center(child: Text('Ошибка запуска: $e')))));
     return;
   }
@@ -52,8 +58,15 @@ void main() async {
 }
 
 /// Основной класс приложения.
-class MainApp extends StatelessWidget {
+class MainApp extends StatefulWidget {
   const MainApp({super.key});
+
+  @override
+  State<MainApp> createState() => _MainAppState();
+}
+
+class _MainAppState extends State<MainApp> {
+  bool _showSplash = true;
 
   @override
   Widget build(BuildContext context) {
@@ -63,23 +76,44 @@ class MainApp extends StatelessWidget {
           create: (_) => VenueBloc(getVenuesUseCase: getIt<GetVenuesUseCase>())
             ..add(const FetchVenuesEvent()),
         ),
-      ],
-      child: MaterialApp(
-        title: 'Urban',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          brightness: Brightness.dark,
-          scaffoldBackgroundColor: UrbanTheme.backgroundColor,
-          primaryColor: UrbanTheme.primaryColor,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: UrbanTheme.primaryColor,
-            brightness: Brightness.dark,
-            surface: UrbanTheme.surfaceColor,
-          ),
-          fontFamily: 'Inter',
-          useMaterial3: true,
+        BlocProvider(
+          create: (_) => getIt<ThemeBloc>()..add(LoadThemeEvent()),
         ),
-        home: const HomeScreen(),
+      ],
+      child: BlocBuilder<ThemeBloc, ThemeState>(
+        builder: (context, state) {
+          return MaterialApp(
+            title: 'Urban',
+            debugShowCheckedModeBanner: false,
+            themeMode: state.themeMode,
+            theme: ThemeData(
+              brightness: Brightness.light,
+              scaffoldBackgroundColor: Colors.white,
+              primaryColor: UrbanTheme.primaryColor,
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: UrbanTheme.primaryColor,
+                brightness: Brightness.light,
+              ),
+              fontFamily: 'Inter',
+              useMaterial3: true,
+            ),
+            darkTheme: ThemeData(
+              brightness: Brightness.dark,
+              scaffoldBackgroundColor: UrbanTheme.darkBackground,
+              primaryColor: UrbanTheme.primaryColor,
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: UrbanTheme.primaryColor,
+                brightness: Brightness.dark,
+                surface: UrbanTheme.darkSurface,
+              ),
+              fontFamily: 'Inter',
+              useMaterial3: true,
+            ),
+            home: _showSplash 
+                ? UrbanSplashScreen(onComplete: () => setState(() => _showSplash = false))
+                : const HomeScreen(),
+          );
+        },
       ),
     );
   }
@@ -96,7 +130,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  /// Список экранов. FeedScreen теперь первый для стабильности при запуске.
   final List<Widget> _screens = const [
     FeedScreen(),
     MapScreen(),
@@ -106,41 +139,47 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: UrbanTheme.surfaceColor,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 20,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildNavItem(0, Icons.explore_outlined, Icons.explore, 'Лента'),
-                _buildNavItem(1, Icons.map_outlined, Icons.map, 'Карта'),
-                _buildNavItem(2, Icons.chat_outlined, Icons.chat, 'Чат'),
-                _buildNavItem(3, Icons.person_outline, Icons.person, 'Профиль'),
+    return BlocBuilder<ThemeBloc, ThemeState>(
+      builder: (context, state) {
+        final isDark = state.themeMode == ThemeMode.dark;
+        
+        return Scaffold(
+          body: IndexedStack(
+            index: _currentIndex,
+            children: _screens,
+          ),
+          bottomNavigationBar: Container(
+            decoration: BoxDecoration(
+              color: isDark ? UrbanTheme.darkSurface : Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, -5),
+                ),
               ],
             ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildNavItem(0, Icons.explore_outlined, Icons.explore, 'Лента', isDark),
+                    _buildNavItem(1, Icons.map_outlined, Icons.map, 'Карта', isDark),
+                    _buildNavItem(2, Icons.chat_outlined, Icons.chat, 'Чат', isDark),
+                    _buildNavItem(3, Icons.person_outline, Icons.person, 'Профиль', isDark),
+                  ],
+                ),
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildNavItem(int index, IconData inactiveIcon, IconData activeIcon, String label) {
+  Widget _buildNavItem(int index, IconData inactiveIcon, IconData activeIcon, String label, bool isDark) {
     final isActive = _currentIndex == index;
     
     return GestureDetector(
@@ -149,7 +188,7 @@ class _HomeScreenState extends State<HomeScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? UrbanTheme.primaryColor.withOpacity(0.1) : Colors.transparent,
+          color: isActive ? UrbanTheme.primaryColor.withValues(alpha: 0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -157,14 +196,15 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Icon(
               isActive ? activeIcon : inactiveIcon,
-              color: isActive ? UrbanTheme.primaryColor : UrbanTheme.textMuted,
+              color: isActive ? UrbanTheme.primaryColor : (isDark ? UrbanTheme.darkTextSecondary : Colors.grey),
               size: 24,
             ),
             const SizedBox(height: 4),
             Text(
               label,
-              style: UrbanTheme.bodySmall.copyWith(
-                color: isActive ? UrbanTheme.primaryColor : UrbanTheme.textMuted,
+              style: TextStyle(
+                fontSize: 12,
+                color: isActive ? UrbanTheme.primaryColor : (isDark ? UrbanTheme.darkTextSecondary : Colors.grey),
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
@@ -180,10 +220,14 @@ class ChatScreenPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Text(
         'Чат (в разработке)',
-        style: TextStyle(color: Colors.white),
+        style: TextStyle(
+          color: Theme.of(context).brightness == Brightness.dark 
+              ? Colors.white 
+              : Colors.black,
+        ),
       ),
     );
   }

@@ -11,11 +11,12 @@ dependencies:
   flutter:
     sdk: flutter
   
-  # 🗺️ КАРТЫ (ЯНДЕКС) - Основной стек согласно AI_CODING_GUIDELINES §2.4
-  yandex_mapkit: ^4.2.1
+  # 🗺️ КАРТЫ (OpenStreetMap)
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
   geolocator: ^14.0.2
   geocoding: ^4.0.0
-  
+
   # 🏗️ State Management & Logic (Clean Architecture)
   flutter_bloc: ^9.1.1
   equatable: ^2.0.8
@@ -32,7 +33,7 @@ dependencies:
   pocketbase: 0.23.2
   url_launcher: ^6.3.2
   
-  # 💾 Local Storage (Offline Mode - FUTURE_IMPLEMENTATIONS §6.2)
+  # 💾 Local Storage (Offline Mode)
   hive: 2.2.3
   hive_flutter: 1.1.0
   flutter_secure_storage: ^10.0.0
@@ -48,11 +49,27 @@ dependencies:
   shimmer: 3.0.0
   lottie: ^3.3.3
   animate_do: ^4.2.0
+  video_player: ^2.9.2
+  vector_math: ^2.1.4
+  flutter_svg: ^2.0.10+1
   
   # 🛠 Utils
   intl: ^0.20.2
   local_auth: ^3.0.1
   flutter_dotenv: ^6.0.0
+  vector_map_tiles: ^9.0.0-beta.7
+  vector_tile_renderer: ^6.0.0
+  maplibre_gl: ^0.25.0
+  flutter_native_splash: ^2.4.3
+  flutter_launcher_icons: ^0.14.4
+
+flutter_native_splash:
+  color: "#ffffff"
+  image: assets/icons/app_icon.png
+  android_12:
+    image: assets/icons/app_icon.png
+    color: "#ffffff"
+  web: false
 
 dev_dependencies:
   flutter_test:
@@ -70,5 +87,6 @@ flutter:
   assets:
     - .env
     - assets/images/
+    - assets/images/splash/
     - assets/icons/
     - assets/lottie/

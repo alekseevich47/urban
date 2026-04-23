@@ -1,22 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:yandex_mapkit/yandex_mapkit.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
-import '../../../../core/ui/urban_theme.dart';
+import 'package:urban_app/core/ui/urban_theme.dart';
 import '../../domain/entities/map_item.dart';
 
-/// Универсальный виджет карты Urban.
-/// Инкапсулирует логику работы с Яндекс.Картами и геолокацией.
+/// Универсальный виджет карты Urban (переведен на OSM).
 class UrbanMapView extends StatefulWidget {
-  /// Список элементов для отображения на карте.
   final List<MapItem> items;
-
-  /// Обработчик нажатия на объект.
   final void Function(MapItem item)? onItemTap;
-
-  /// Обработчик нажатия на саму карту.
   final VoidCallback? onMapTap;
-
-  /// Позволяет передать дополнительные слои (например, поиск) поверх карты.
   final List<Widget>? children;
 
   const UrbanMapView({
@@ -32,30 +25,42 @@ class UrbanMapView extends StatefulWidget {
 }
 
 class _UrbanMapViewState extends State<UrbanMapView> {
-  late YandexMapController _mapController;
-  final List<MapObject> _mapObjects = [];
-
-  @override
-  void didUpdateWidget(UrbanMapView oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.items != oldWidget.items) {
-      _updateMapObjects();
-    }
-  }
+  final MapController _mapController = MapController();
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        YandexMap(
-          onMapCreated: (controller) async {
-            _mapController = controller;
-            await _mapController.toggleUserLayer(visible: true);
-            await _goToUserLocation();
-            _updateMapObjects();
-          },
-          mapObjects: _mapObjects,
-          onMapTap: (point) => widget.onMapTap?.call(),
+        FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            initialCenter: const LatLng(55.7558, 37.6173),
+            initialZoom: 13.0,
+            onTap: (_, __) => widget.onMapTap?.call(),
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://urban42.online/map/styles/bright/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.urbanapp.urban_app',
+            ),
+            MarkerLayer(
+              markers: widget.items.map((item) {
+                return Marker(
+                  point: LatLng(item.latitude, item.longitude),
+                  width: 40,
+                  height: 40,
+                  child: GestureDetector(
+                    onTap: () => widget.onItemTap?.call(item),
+                    child: Image.asset(
+                      item.iconAsset ?? 'assets/icons/map_marker.png',
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Icon(Icons.location_on, color: Colors.red, size: 40),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
         ),
         if (widget.children != null) ...widget.children!,
         Positioned(
@@ -63,7 +68,7 @@ class _UrbanMapViewState extends State<UrbanMapView> {
           right: 16,
           child: FloatingActionButton(
             onPressed: _goToUserLocation,
-            backgroundColor: UrbanTheme.surfaceColor,
+            backgroundColor: UrbanTheme.getSurfaceColor(context),
             child: const Icon(Icons.my_location, color: UrbanTheme.primaryColor),
           ),
         ),
@@ -71,53 +76,12 @@ class _UrbanMapViewState extends State<UrbanMapView> {
     );
   }
 
-  /// Обновляет маркеры на карте.
-  void _updateMapObjects() {
-    setState(() {
-      _mapObjects.clear();
-      for (final item in widget.items) {
-        _mapObjects.add(
-          PlacemarkMapObject(
-            mapId: MapObjectId('point_${item.id}'),
-            point: Point(
-              latitude: item.latitude,
-              longitude: item.longitude,
-            ),
-            opacity: 1,
-            icon: PlacemarkIcon.single(
-              PlacemarkIconStyle(
-                image: BitmapDescriptor.fromAssetImage(item.iconAsset ?? 'assets/icons/map_marker.png'),
-                scale: 0.8,
-              ),
-            ),
-            onTap: (object, point) => widget.onItemTap?.call(item),
-          ),
-        );
-      }
-    });
-  }
-
-  /// Перемещает камеру к текущему местоположению пользователя.
   Future<void> _goToUserLocation() async {
     try {
-      final permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        final request = await Geolocator.requestPermission();
-        if (request == LocationPermission.denied) return;
-      }
-
       final position = await Geolocator.getCurrentPosition();
-      await _mapController.moveCamera(
-        animation: const MapAnimation(type: MapAnimationType.smooth, duration: 1.5),
-        CameraUpdate.newCameraPosition(
-          CameraPosition(
-            target: Point(
-              latitude: position.latitude,
-              longitude: position.longitude,
-            ),
-            zoom: 15,
-          ),
-        ),
+      _mapController.move(
+        LatLng(position.latitude, position.longitude),
+        15.0,
       );
     } catch (e) {
       debugPrint('Error getting location: $e');

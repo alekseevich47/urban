@@ -61,6 +61,12 @@ class EntertainmentVenue {
   final double? priceFrom;
   final List<String> keywords;
   final VenueTags tags;
+  
+  // Новые поля для социальной ленты
+  final String authorName;
+  final String authorAvatar;
+  final int likesCount;
+  final int viewsCount;
 
   const EntertainmentVenue({
     required this.id,
@@ -74,5 +80,9 @@ class EntertainmentVenue {
     this.priceFrom,
     this.keywords = const [],
     required this.tags,
+    this.authorName = 'Urban Explorer',
+    this.authorAvatar = 'https://i.pravatar.cc/150?u=urban',
+    this.likesCount = 0,
+    this.viewsCount = 0,
   });
 }

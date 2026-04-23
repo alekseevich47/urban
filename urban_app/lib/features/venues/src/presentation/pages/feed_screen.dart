@@ -5,10 +5,9 @@ import 'package:urban_app/features/venues/src/domain/entities/venue.dart';
 import 'package:urban_app/features/venues/src/presentation/bloc/venue_bloc.dart';
 import 'package:urban_app/features/venues/src/presentation/bloc/venue_event.dart';
 import 'package:urban_app/features/venues/src/presentation/bloc/venue_state.dart';
-import 'package:urban_app/features/venues/src/presentation/widgets/interactive_sphere_view.dart';
+// import 'package:urban_app/features/venues/src/presentation/widgets/interactive_sphere_view.dart'; // Временно отключено
 
 /// Экран ленты заведений.
-/// Поддерживает два режима отображения: 3D сфера и классический список.
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
 
@@ -17,12 +16,12 @@ class FeedScreen extends StatefulWidget {
 }
 
 class _FeedScreenState extends State<FeedScreen> {
-  bool _isSphereMode = true;
+  // final bool _isSphereMode = false; // Режим сферы временно отключен
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: UrbanTheme.backgroundColor,
+      backgroundColor: UrbanTheme.getBackgroundColor(context),
       body: BlocBuilder<VenueBloc, VenueState>(
         builder: (context, state) {
           if (state is VenueLoading) {
@@ -31,85 +30,18 @@ class _FeedScreenState extends State<FeedScreen> {
             );
           }
 
-          if (state is VenueError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(state.message, style: const TextStyle(color: Colors.red)),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => context.read<VenueBloc>().add(const FetchVenuesEvent()),
-                    child: const Text('Повторить'),
-                  ),
-                ],
-              ),
-            );
-          }
-
           if (state is VenueLoaded) {
             final venues = state.filteredVenues;
 
-            if (venues.isEmpty) {
-              return const Center(
-                child: Text('Ничего не найдено', style: TextStyle(color: Colors.white)),
-              );
-            }
-
             return Stack(
               children: [
-                // ОСНОВНОЙ КОНТЕНТ (СФЕРА ИЛИ СПИСОК)
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 500),
-                  child: _isSphereMode
-                      ? InteractiveSphereView(venues: venues)
-                      : _buildListView(context, venues),
-                ),
+                // Режим сферы временно удален из Stack для оптимизации
+                
+                // КЛАССИЧЕСКИЙ СПИСОК
+                _buildListView(context, venues),
 
-                // ПЛАВАЮЩИЙ APPBAR (ПРОЗРАЧНЫЙ)
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    padding: EdgeInsets.only(
-                      top: MediaQuery.of(context).padding.top + 10,
-                      left: 20,
-                      right: 20,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Urban Sphere', style: UrbanTheme.headingMedium),
-                            Text(
-                              _isSphereMode ? '3D EXPLORE BETA' : 'CLASSIC LIST',
-                              style: UrbanTheme.bodySmall.copyWith(
-                                color: UrbanTheme.primaryColor,
-                                letterSpacing: 2,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            _buildCircleButton(
-                              _isSphereMode ? Icons.view_list : Icons.public,
-                              () => setState(() => _isSphereMode = !_isSphereMode),
-                            ),
-                            const SizedBox(width: 12),
-                            _buildCircleButton(
-                              Icons.refresh,
-                              () => context.read<VenueBloc>().add(const FetchVenuesEvent()),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                // ПЛАВАЮЩИЙ ИНТЕРФЕЙС
+                _buildOverlayHeader(context),
               ],
             );
           }
@@ -120,16 +52,65 @@ class _FeedScreenState extends State<FeedScreen> {
     );
   }
 
-  Widget _buildCircleButton(IconData icon, VoidCallback onTap) {
+  Widget _buildOverlayHeader(BuildContext context) {
+    return Positioned(
+      top: 0, left: 0, right: 0,
+      child: Container(
+        padding: EdgeInsets.only(
+          top: MediaQuery.of(context).padding.top + 10,
+          left: 20, right: 20,
+        ),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              UrbanTheme.getBackgroundColor(context),
+              UrbanTheme.getBackgroundColor(context).withValues(alpha: 0.0),
+            ],
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Urban Feed', style: UrbanTheme.headingMedium(context)),
+                Text(
+                  'LATEST PLACES',
+                  style: UrbanTheme.bodySmall(context).copyWith(
+                    color: UrbanTheme.primaryColor,
+                    letterSpacing: 2,
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                // Кнопка сферы убрана
+                _buildCircleButton(
+                  context,
+                  Icons.refresh,
+                  () => context.read<VenueBloc>().add(const FetchVenuesEvent()),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCircleButton(BuildContext context, IconData icon, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 45,
-        height: 45,
+        width: 45, height: 45,
         decoration: BoxDecoration(
-          color: UrbanTheme.surfaceColor.withOpacity(0.7),
+          color: UrbanTheme.getSurfaceColor(context).withValues(alpha: 0.7),
           shape: BoxShape.circle,
-          border: Border.all(color: UrbanTheme.primaryColor.withOpacity(0.5)),
+          border: Border.all(color: UrbanTheme.primaryColor.withValues(alpha: 0.5)),
         ),
         child: Icon(icon, color: UrbanTheme.primaryColor, size: 20),
       ),
@@ -137,75 +118,46 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   Widget _buildListView(BuildContext context, List<EntertainmentVenue> venues) {
-    return RefreshIndicator(
-      onRefresh: () async {
-        context.read<VenueBloc>().add(const FetchVenuesEvent());
-      },
-      color: UrbanTheme.primaryColor,
-      child: ListView.builder(
-        padding: const EdgeInsets.only(top: 100, left: 16, right: 16, bottom: 16),
-        itemCount: venues.length,
-        itemBuilder: (context, index) {
-          final venue = venues[index];
-          return _buildFeedItem(venue);
-        },
-      ),
+    return ListView.builder(
+      padding: const EdgeInsets.only(top: 120, left: 16, right: 16, bottom: 100),
+      itemCount: venues.length,
+      itemBuilder: (context, index) => _buildFeedItem(context, venues[index]),
     );
   }
 
-  Widget _buildFeedItem(EntertainmentVenue venue) {
+  Widget _buildFeedItem(BuildContext context, EntertainmentVenue venue) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      decoration: UrbanTheme.cardDecoration,
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: UrbanTheme.cardDecoration(context),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ListTile(
-            leading: CircleAvatar(
-              backgroundColor: UrbanTheme.primaryColor.withOpacity(0.2),
-              child: Icon(venue.category.icon, color: UrbanTheme.primaryColor, size: 20),
-            ),
-            title: Text(venue.name, style: UrbanTheme.headingSmall),
-            subtitle: Text('${venue.subCategory} • ${venue.tags.price}', style: UrbanTheme.bodySmall),
-          ),
           AspectRatio(
             aspectRatio: 16 / 9,
             child: Image.network(venue.imageUrl, fit: BoxFit.cover),
           ),
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(venue.description, style: UrbanTheme.bodyMedium, maxLines: 2),
-                const SizedBox(height: 12),
                 Row(
                   children: [
-                    _buildStat(Icons.star, venue.rating.toString()),
-                    const SizedBox(width: 16),
-                    _buildStat(Icons.timer_outlined, venue.tags.time.first),
+                    Text(venue.name, style: UrbanTheme.headingSmall(context)),
                     const Spacer(),
-                    TextButton(
-                      onPressed: () {},
-                      child: const Text('Подробнее', style: TextStyle(color: UrbanTheme.primaryColor)),
-                    ),
+                    const Icon(Icons.star, color: UrbanTheme.warningColor, size: 16),
+                    const SizedBox(width: 4),
+                    Text(venue.rating.toString(), style: UrbanTheme.bodyMedium(context)),
                   ],
                 ),
+                const SizedBox(height: 8),
+                Text(venue.description, style: UrbanTheme.bodySmall(context), maxLines: 2),
               ],
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildStat(IconData icon, String label) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: UrbanTheme.textMuted),
-        const SizedBox(width: 4),
-        Text(label, style: UrbanTheme.bodySmall),
-      ],
     );
   }
 }
